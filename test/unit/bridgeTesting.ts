@@ -52,8 +52,8 @@ describe("Token bridge", function () {
     });
 
     it("Should support token", async function() {
-      expect(await bridgeInstanceBsc.supportedToken(tokenInstanceBsc.address)).to.eq(true);
-      expect(await bridgeInstanceEth.supportedToken(tokenInstanceEth.address)).to.eq(true);
+      expect(await bridgeInstanceBsc.supportedToken(tokenInstanceBsc.address)).to.eq(tokenInstanceBsc.address);
+      expect(await bridgeInstanceEth.supportedToken(tokenInstanceEth.address)).to.eq(tokenInstanceEth.address);
     });
 
     it("Should support blockchain", async function() {
@@ -106,15 +106,15 @@ describe("Token bridge", function () {
       await bridgeInstanceEth.includeToken(newTokenInstanceEth.address);
       await bridgeInstanceBsc.includeToken(newTokenInstanceBsc.address);
 
-      expect(await bridgeInstanceEth.supportedToken(newTokenInstanceEth.address)).to.eq(true);
-      expect(await bridgeInstanceBsc.supportedToken(newTokenInstanceBsc.address)).to.eq(true);
+      expect(await bridgeInstanceEth.supportedToken(newTokenInstanceEth.address)).to.eq(newTokenInstanceEth.address);
+      expect(await bridgeInstanceBsc.supportedToken(newTokenInstanceBsc.address)).to.eq(newTokenInstanceBsc.address);
     });
 
     it("Should be deleted token support to be swapped", async function() {
       await bridgeInstanceEth.excludeToken(tokenInstanceEth.address);
       await bridgeInstanceBsc.excludeToken(tokenInstanceBsc.address);
-      expect(await bridgeInstanceEth.supportedToken(tokenInstanceBsc.address)).to.eq(false);
-      expect(await bridgeInstanceBsc.supportedToken(tokenInstanceEth.address)).to.eq(false);
+      expect(await bridgeInstanceEth.supportedToken(tokenInstanceBsc.address)).to.eq("0x0000000000000000000000000000000000000000");
+      expect(await bridgeInstanceBsc.supportedToken(tokenInstanceEth.address)).to.eq("0x0000000000000000000000000000000000000000");
     });
 
     it("Should add chain support", async function() {

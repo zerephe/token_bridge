@@ -12,8 +12,6 @@ contract TokenBridge is Ownable {
     uint256 public chainId;
     uint256 private nonce = 0;
 
-    address private nullAddress = 0x0000000000000000000000000000000000000000;
-
     mapping(address => mapping(uint256 => bool)) private isNonced;
     mapping(uint256 => bool) public supportedChainId;
     mapping(uint256 => bytes32) private processedSignature;
@@ -50,7 +48,7 @@ contract TokenBridge is Ownable {
      * @return {bool} - Returns true if transaction succeed
      */
     function swap(address to, address tokenAddr, uint256 amount, uint256 _chainId) external returns(bool){
-        require(address(supportedToken[tokenAddr]) != nullAddress, "Token not supported!");
+        require(address(supportedToken[tokenAddr]) != address(0), "Token not supported!");
         require(supportedChainId[_chainId], "Blockchain doesnt supported");
         require(!isNonced[msg.sender][nonce], "Swap was already processed!");
 
@@ -84,7 +82,7 @@ contract TokenBridge is Ownable {
             uint256 _nonce,
             uint8 v, bytes32 r, bytes32 s
         ) public returns (bool){
-        require(address(supportedToken[tokenAddr]) != nullAddress, "Token not supported!");
+        require(address(supportedToken[tokenAddr]) != address(0), "Token not supported!");
         bytes32 message = keccak256(abi.encodePacked(from, tokenAddr, amount, nonce));
         bytes32 hashedMessage = hashMessage(message);
         address addr = ecrecover(hashedMessage, v, r, s);
@@ -124,7 +122,7 @@ contract TokenBridge is Ownable {
      * @return {bool} - Returns true if transaction succeed
      */
     function excludeToken(address tokenAddr) external onlyOwner returns(bool){
-        supportedToken[tokenAddr] = ISwapToken(nullAddress);
+        supportedToken[tokenAddr] = ISwapToken(address(0));
         return true;
     }
 

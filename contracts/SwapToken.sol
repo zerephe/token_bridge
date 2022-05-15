@@ -13,7 +13,15 @@ contract SwapToken is ERC20, ERC20Burnable, AccessControl {
         _grantRole(MINTER_ROLE, msg.sender);
     }
 
-    function mint(address to, uint256 amount) external {
+    /**
+     * Mints tokens to specific address
+     * @param {address} to - Address of recipient
+     * @param {uint256} amount - Amount to mint
+     * @return {bool} - Returns true if transaction succeed
+     */
+    function mint(address to, uint256 amount) external returns(bool){
         _mint(to, amount);
+
+        return true;
     }
 }

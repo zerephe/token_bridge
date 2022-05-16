@@ -1,5 +1,5 @@
-# ERC721_token
-My first ERC1155 token
+# Token Bridge
+Transfer tokens between to blockchains
 
 
 ![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)

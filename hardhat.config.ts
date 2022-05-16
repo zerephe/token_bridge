@@ -6,6 +6,8 @@ import "@nomiclabs/hardhat-waffle";
 import "@typechain/hardhat";
 import "solidity-coverage";
 
+import "./task/redeem.ts"
+import "./task/swap.ts"
 
 dotenv.config();
 

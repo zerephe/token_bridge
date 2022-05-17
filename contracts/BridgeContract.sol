@@ -67,8 +67,7 @@ contract TokenBridge is Ownable {
      * @param {address} to - Address of recipient
      * @param {address} tokenAddr - Token address, that should be transfered
      * @param {uint256} amount - Token amount
-     * @param {uint256} _chainId - blockchain id from
-     * @param {uint256} _toChainId - blockchain id to
+     * @param {uint256} _fromChainId - blockchain id from
      * @param {uint256} _nonce - Uniq nonce number
      * @param {uint8} v - v part of signature
      * @param {bytes32} r - r part of signature
@@ -80,13 +79,12 @@ contract TokenBridge is Ownable {
             address to, 
             address tokenAddr, 
             uint256 amount,
-            uint256 _chainId,
-            uint256 _toChainId, 
+            uint256 _fromChainId,
             uint256 _nonce,
             uint8 v, bytes32 r, bytes32 s
         ) public returns (bool){
         require(address(supportedToken[tokenAddr]) != address(0), "Token not supported!");
-        bytes32 message = keccak256(abi.encodePacked(from, tokenAddr, amount, _chainId, _toChainId, _nonce));
+        bytes32 message = keccak256(abi.encodePacked(from, tokenAddr, amount, _fromChainId, chainId, _nonce));
         bytes32 hashedMessage = hashMessage(message);
         address addr = ecrecover(hashedMessage, v, r, s);
 

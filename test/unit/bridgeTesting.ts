@@ -77,15 +77,15 @@ describe("Token bridge", function () {
 
     it("Should triger listener if swap event initialized", async function() {  
       //Setting event listener for swap event
-      bridgeInstanceEth.on("swapInitialized", async (from, to, tokenAddr, amount, chainId, toChainId, nonce) => {
+      bridgeInstanceEth.on("swapInitialized", async (from, to, tokenAddr, amount, fromChainId, toChainId, nonce) => {
         const msg = ethers.utils.solidityKeccak256(
           ["address", "address", "uint256", "uint256", "uint256", "uint256"], 
-          [from, tokenAddr, amount, chainId, toChainId, nonce]
+          [from, tokenAddr, amount, fromChainId, toChainId, nonce]
         );
         const signature = await owner.signMessage(ethers.utils.arrayify(msg));
         let sig = ethers.utils.splitSignature(signature);
 
-        await bridgeInstanceBsc.redeem(from, to, tokenAddr, amount, chainId, toChainId, nonce, sig.v, sig.r, sig.s);
+        await bridgeInstanceBsc.redeem(from, to, tokenAddr, amount, fromChainId, nonce, sig.v, sig.r, sig.s);
         console.log("initialized");
       });
       

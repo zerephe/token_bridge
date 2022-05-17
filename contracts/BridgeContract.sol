@@ -7,14 +7,15 @@ import "./ISwapToken.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract TokenBridge is Ownable {
-    event swapInitialized(address from, address to, address tokenAddr, uint256 amount, uint256 nonce);
+    event swapInitialized(address from, address to, address tokenAddr, uint256 amount, uint256 nonce, uint256 chainId, uint256 toChainId);
 
     uint256 public chainId;
     uint256 private nonce = 0;
 
-    mapping(address => mapping(uint256 => bool)) private isNonced;
+    enum SignatureState {valid, processed, none}
+
     mapping(uint256 => bool) public supportedChainId;
-    mapping(uint256 => bytes32) private processedSignature;
+    mapping(bytes32 => SignatureState) private processedSignature;
     mapping(address => ISwapToken) public supportedToken;
 
     /*
@@ -47,15 +48,13 @@ contract TokenBridge is Ownable {
      * @param {uint256} _chainId - ChainId of blockchain where tokens should be transfered
      * @return {bool} - Returns true if transaction succeed
      */
-    function swap(address to, address tokenAddr, uint256 amount, uint256 _chainId) external returns(bool){
+    function swap(address to, address tokenAddr, uint256 amount, uint256 _toChainId) external returns(bool){
         require(address(supportedToken[tokenAddr]) != address(0), "Token not supported!");
-        require(supportedChainId[_chainId], "Blockchain doesnt supported");
-        require(!isNonced[msg.sender][nonce], "Swap was already processed!");
+        require(supportedChainId[_toChainId], "Blockchain doesnt supported");
 
-        isNonced[msg.sender][nonce] = true;
         supportedToken[tokenAddr].burnFrom(msg.sender, amount);
 
-        emit swapInitialized(msg.sender, to, tokenAddr, amount, nonce);
+        emit swapInitialized(msg.sender, to, tokenAddr, amount, nonce, chainId, _toChainId);
         
         nonce++;
 
@@ -68,7 +67,9 @@ contract TokenBridge is Ownable {
      * @param {address} to - Address of recipient
      * @param {address} tokenAddr - Token address, that should be transfered
      * @param {uint256} amount - Token amount
-     * @param {uint256} _nonce - Uniq nonce number 
+     * @param {uint256} _chainId - blockchain id from
+     * @param {uint256} _toChainId - blockchain id to
+     * @param {uint256} _nonce - Uniq nonce number
      * @param {uint8} v - v part of signature
      * @param {bytes32} r - r part of signature
      * @param {bytes32} s - s part of signature 
@@ -78,19 +79,21 @@ contract TokenBridge is Ownable {
             address from, 
             address to, 
             address tokenAddr, 
-            uint256 amount, 
+            uint256 amount,
+            uint256 _chainId,
+            uint256 _toChainId, 
             uint256 _nonce,
             uint8 v, bytes32 r, bytes32 s
         ) public returns (bool){
         require(address(supportedToken[tokenAddr]) != address(0), "Token not supported!");
-        bytes32 message = keccak256(abi.encodePacked(from, tokenAddr, amount, nonce));
+        bytes32 message = keccak256(abi.encodePacked(from, tokenAddr, amount, _chainId, _toChainId, _nonce));
         bytes32 hashedMessage = hashMessage(message);
         address addr = ecrecover(hashedMessage, v, r, s);
 
-        require(processedSignature[_nonce] != hashedMessage, "Redeem was already processed!");
+        require(processedSignature[hashedMessage] == SignatureState.valid, "Redeem was already processed!");
         require(addr == from, "Invalid transaction!");
 
-        processedSignature[_nonce] = hashedMessage;
+        processedSignature[hashedMessage] = SignatureState.processed;
         supportedToken[tokenAddr].mint(to, amount);
 
         return true;

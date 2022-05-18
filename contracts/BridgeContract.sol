@@ -84,7 +84,7 @@ contract TokenBridge is Ownable {
             uint8 v, bytes32 r, bytes32 s
         ) public returns (bool){
         require(address(supportedToken[tokenAddr]) != address(0), "Token not supported!");
-        bytes32 message = keccak256(abi.encodePacked(from, tokenAddr, amount, _fromChainId, chainId, _nonce));
+        bytes32 message = keccak256(abi.encodePacked(from, to, tokenAddr, amount, _fromChainId, chainId, _nonce));
         bytes32 hashedMessage = hashMessage(message);
         address addr = ecrecover(hashedMessage, v, r, s);
 

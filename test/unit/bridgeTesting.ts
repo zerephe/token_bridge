@@ -75,25 +75,100 @@ describe("Token bridge", function () {
         .withArgs(owner.address, addr1.address, tokenInstanceEth.address, 100, 0);
     });
 
+    it("Should be reverted if swap token not supported", async function() {
+      await expect(bridgeInstanceEth.swap(addr1.address, tokenInstanceBsc.address, 100, 97)).to.be.revertedWith("Token not supported!");
+    });
+
+    it("Should be reverted if swap blockchain id not supported", async function() {
+      await expect(bridgeInstanceEth.swap(addr1.address, tokenInstanceEth.address, 100, 1)).to.be.revertedWith("Blockchain doesnt supported");
+    });
+
     it("Should triger listener if swap event initialized", async function() {  
       //Setting event listener for swap event
-      bridgeInstanceEth.on("swapInitialized", async (from, to, tokenAddr, amount, fromChainId, toChainId, nonce) => {
-        const msg = ethers.utils.solidityKeccak256(
-          ["address", "address", "uint256", "uint256", "uint256", "uint256"], 
-          [from, tokenAddr, amount, fromChainId, toChainId, nonce]
-        );
-        const signature = await owner.signMessage(ethers.utils.arrayify(msg));
-        let sig = ethers.utils.splitSignature(signature);
-
-        await bridgeInstanceBsc.redeem(from, to, tokenAddr, amount, fromChainId, nonce, sig.v, sig.r, sig.s);
-        console.log("initialized");
-      });
-      
       await tokenInstanceEth.approve(bridgeInstanceEth.address, 100);
-      //Call swap function, swap event should be initialized
-      await bridgeInstanceEth.swap(addr1.address, tokenInstanceEth.address, 100, 97);
+      const tx = await bridgeInstanceEth.swap(addr1.address, tokenInstanceEth.address, 100, 97);
+      const rc = await tx.wait(); // 0ms, as tx is already confirmed
+      const event = rc.events.find((event: { event: string; }) => event.event === 'swapInitialized');
+
+      const [from, to, tokenAddr, amount, nonce, fromChainId, toChainId] = event.args;
+      const msg = ethers.utils.solidityKeccak256(
+        ["address", "address", "address", "uint256", "uint256", "uint256", "uint256"], 
+        [from, to, tokenInstanceBsc.address, amount, fromChainId, toChainId, nonce]
+      );
+      
+      const signature = await owner.signMessage(ethers.utils.arrayify(msg));
+      let sig = ethers.utils.splitSignature(signature);
+      
+      await bridgeInstanceBsc.redeem(from, to, tokenInstanceBsc.address, amount, fromChainId, nonce, sig.v, sig.r, sig.s);
 
       expect(await tokenInstanceBsc.balanceOf(addr1.address)).to.eq(100);
+    });
+
+    it("Should be reverted if token not supported", async function() {  
+      //Setting event listener for swap event
+      await tokenInstanceEth.approve(bridgeInstanceEth.address, 100);
+      const tx = await bridgeInstanceEth.swap(addr1.address, tokenInstanceEth.address, 100, 97);
+      const rc = await tx.wait(); // 0ms, as tx is already confirmed
+      const event = rc.events.find((event: { event: string; }) => event.event === 'swapInitialized');
+
+      const [from, to, tokenAddr, amount, nonce, fromChainId, toChainId] = event.args;
+      const msg = ethers.utils.solidityKeccak256(
+        ["address", "address", "address", "uint256", "uint256", "uint256", "uint256"], 
+        [from, to, tokenInstanceBsc.address, amount, fromChainId, toChainId, nonce]
+      );
+      
+      const signature = await owner.signMessage(ethers.utils.arrayify(msg));
+      let sig = ethers.utils.splitSignature(signature);
+      
+      await expect(bridgeInstanceBsc.redeem(from, to, tokenAddr, amount, fromChainId, nonce, sig.v, sig.r, sig.s)).to.be.revertedWith("Token not supported!");
+    });
+
+    it("Should be reverted if transaction already processed", async function() {  
+      //Setting event listener for swap event
+      await tokenInstanceEth.approve(bridgeInstanceEth.address, 100);
+      const tx = await bridgeInstanceEth.swap(addr1.address, tokenInstanceEth.address, 100, 97);
+      const rc = await tx.wait(); // 0ms, as tx is already confirmed
+      const event = rc.events.find((event: { event: string; }) => event.event === 'swapInitialized');
+
+      const [from, to, tokenAddr, amount, nonce, fromChainId, toChainId] = event.args;
+      const msg = ethers.utils.solidityKeccak256(
+        ["address", "address", "address", "uint256", "uint256", "uint256", "uint256"], 
+        [from, to, tokenInstanceBsc.address, amount, fromChainId, toChainId, nonce]
+      );
+      
+      const signature = await owner.signMessage(ethers.utils.arrayify(msg));
+      let sig = ethers.utils.splitSignature(signature);
+      
+      await bridgeInstanceBsc.redeem(from, to, tokenInstanceBsc.address, amount, fromChainId, nonce, sig.v, sig.r, sig.s);
+
+      await expect(bridgeInstanceBsc.redeem(
+        from,
+        to, 
+        tokenInstanceBsc.address, 
+        amount, 
+        fromChainId, 
+        nonce, 
+        sig.v, sig.r, sig.s
+      )).to.be.revertedWith("Redeem was already processed!");
+    });
+
+    it("Should be reverted if transaction already processed", async function() {  
+      //Setting event listener for swap event
+      await tokenInstanceEth.approve(bridgeInstanceEth.address, 100);
+      const tx = await bridgeInstanceEth.swap(addr1.address, tokenInstanceEth.address, 100, 97);
+      const rc = await tx.wait(); // 0ms, as tx is already confirmed
+      const event = rc.events.find((event: { event: string; }) => event.event === 'swapInitialized');
+
+      const [from, to, tokenAddr, amount, nonce, fromChainId, toChainId] = event.args;
+      const msg = ethers.utils.solidityKeccak256(
+        ["address", "address", "address", "uint256", "uint256", "uint256", "uint256"], 
+        [from, to, tokenAddr, amount, fromChainId, toChainId, nonce]
+      );
+      
+      const signature = await owner.signMessage(ethers.utils.arrayify(msg));
+      let sig = ethers.utils.splitSignature(signature);
+      
+      await expect(bridgeInstanceBsc.redeem(from, to, tokenInstanceBsc.address, amount, fromChainId, nonce, sig.v, sig.r, sig.s)).to.be.revertedWith("Invalid transaction!");
     });
 
     it("Should be added token support to be swapped", async function() {

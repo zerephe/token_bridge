@@ -12,7 +12,7 @@ task("redeem", "Redeem tokens")
     const contractAddress = process.env.CONTRACT_ADDRESS as string;
     const bridgeInstance = await hre.ethers.getContractAt("TokenBridge", contractAddress);
 
-    const result = await bridgeInstance.swap(args.from, args.to, args.tokenAddr, args.amount);
+    const result = await bridgeInstance.redeem(args.from, args.to, args.tokenAddr, args.amount);
     console.log(result);
   });
 
